@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=Command++
+Comment=Fast, keyboard-driven command runner and workflow manager
+Exec=xdg-terminal-exec --app-id=cmdpp --title=Command++ -e cmdpp
+Terminal=false
+Type=Application
+Icon=utilities-terminal
+Categories=Utility;System;
+StartupNotify=true
