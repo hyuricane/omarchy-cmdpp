@@ -78,10 +78,17 @@ hyprctl reload
 
 ## Uninstallation
 
+### Option 1: Using the Uninstaller Script
+Inside the repository, run:
+```bash
+./uninstall.sh
+```
+
+### Option 2: Using the Omarchy CLI
 ```bash
 omarchy plugin remove yuri.cmdpp
 ```
-Remove the `dofile` line from `~/.config/hypr/bindings.lua` and reload with `hyprctl reload`.
+*(The safe file existence guard in `~/.config/hypr/bindings.lua` ensures Hyprland continues running cleanly without config errors).*
 
 ---
 

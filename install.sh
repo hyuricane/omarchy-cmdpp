@@ -44,12 +44,20 @@ fi
 
 # 6. Ensure keybinding is in ~/.config/hypr/bindings.lua
 BINDINGS_FILE="$HOME/.config/hypr/bindings.lua"
-INCLUDE_LINE="dofile(os.getenv(\"HOME\") .. \"/.config/omarchy/plugins/yuri.cmdpp/cmdpp-bindings.lua\")"
 
 if [[ -f "$BINDINGS_FILE" ]]; then
-  if ! grep -Fq "$INCLUDE_LINE" "$BINDINGS_FILE"; then
+  if ! grep -Fq "yuri.cmdpp/cmdpp-bindings.lua" "$BINDINGS_FILE"; then
     echo "Adding Command++ binding to $BINDINGS_FILE..."
-    printf '\n-- Command++\n%s\n' "$INCLUDE_LINE" >> "$BINDINGS_FILE"
+    cat << 'EOF' >> "$BINDINGS_FILE"
+
+-- Command++
+local cmdpp_file = (os.getenv("HOME") or "") .. "/.config/omarchy/plugins/yuri.cmdpp/cmdpp-bindings.lua"
+local cmdpp_handle = io.open(cmdpp_file, "r")
+if cmdpp_handle then
+  cmdpp_handle:close()
+  dofile(cmdpp_file)
+end
+EOF
   fi
 fi
 
