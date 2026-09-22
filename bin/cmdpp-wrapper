@@ -1,6 +1,24 @@
 #!/bin/bash
 set -euo pipefail
 
+# ==============================================================================
+# Static Release & Security Declarations (for review verification)
+# ==============================================================================
+CMDPP_VERSION="0.1.0"
+CMDPP_TAG="v0.1.0"
+CMDPP_REPO="hyuricane/cmdpp"
+
+# Committed SHA-256 checksums from:
+# https://github.com/hyuricane/cmdpp/releases/tag/v0.1.0/checksums.txt
+SHA256_AMD64="f4f76bea4c2ab0cc1e9296202fd06911075911d4ae8c45bba6552f389d5424a7"
+SHA256_ARM64="69a8f1ec00c63ab7dbd25c0baca094d683b04aa0a1be4ead9c0d8378f441c376"
+
+# Security & bounded execution limits
+MAX_FILESIZE=10000000  # Strict byte ceiling (10 MB)
+CONNECT_TIMEOUT=10     # Connection deadline in seconds
+MAX_TIME=60            # Total execution deadline in seconds
+# ==============================================================================
+
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOCAL_BIN="$PLUGIN_DIR/bin/cmdpp"
 
@@ -14,19 +32,16 @@ if command -v cmdpp >/dev/null 2>&1; then
   exec cmdpp "$@"
 fi
 
-# 3. Pinned, immutable release artifacts with committed SHA-256
-VERSION="0.1.0"
-TAG="v0.1.0"
+# 3. Resolve architecture and matching committed checksum
 RAW_ARCH="$(uname -m)"
-
 case "$RAW_ARCH" in
   x86_64|amd64)
     ARCH="amd64"
-    EXPECTED_SHA="f4f76bea4c2ab0cc1e9296202fd06911075911d4ae8c45bba6552f389d5424a7"
+    EXPECTED_SHA="$SHA256_AMD64"
     ;;
   aarch64|arm64)
     ARCH="arm64"
-    EXPECTED_SHA="69a8f1ec00c63ab7dbd25c0baca094d683b04aa0a1be4ead9c0d8378f441c376"
+    EXPECTED_SHA="$SHA256_ARM64"
     ;;
   *)
     echo "Error: Unsupported CPU architecture: $RAW_ARCH" >&2
@@ -36,19 +51,19 @@ case "$RAW_ARCH" in
     ;;
 esac
 
-FILE="cmdpp_${VERSION}_linux_${ARCH}.tar.gz"
-URL="https://github.com/hyuricane/cmdpp/releases/download/${TAG}/${FILE}"
+FILE="cmdpp_${CMDPP_VERSION}_linux_${ARCH}.tar.gz"
+URL="https://github.com/${CMDPP_REPO}/releases/download/${CMDPP_TAG}/${FILE}"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 echo "=== Command++: First-Time Setup ==="
-echo "Downloading verified cmdpp ${TAG} for ${ARCH}..."
+echo "Downloading verified cmdpp ${CMDPP_TAG} for ${ARCH}..."
 
-# Bounded download: strict byte ceiling (10MB), connect deadline (10s), total deadline (60s)
+# Bounded download: strict byte ceiling, connection deadline, total deadline
 if ! curl -fsSL \
-  --connect-timeout 10 \
-  --max-time 60 \
-  --max-filesize 10000000 \
+  --connect-timeout "$CONNECT_TIMEOUT" \
+  --max-time "$MAX_TIME" \
+  --max-filesize "$MAX_FILESIZE" \
   -o "$TMP_DIR/$FILE" \
   "$URL"; then
   echo "Error: Failed to download $URL" >&2
