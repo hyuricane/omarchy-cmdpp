@@ -1,0 +1,31 @@
+#!/bin/bash
+set -euo pipefail
+
+PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+LOCAL_BIN="$PLUGIN_DIR/bin/cmdpp"
+
+# 1. Prefer the local plugin-bundled binary if present
+if [[ -x "$LOCAL_BIN" ]]; then
+  exec "$LOCAL_BIN" "$@"
+fi
+
+# 2. Fall back to system PATH if available
+if command -v cmdpp >/dev/null 2>&1; then
+  exec cmdpp "$@"
+fi
+
+# 3. Bootstrap / download automatically into plugin directory on first launch
+echo "=== Command++: First-Time Setup ==="
+echo "Downloading latest cmdpp release into plugin directory..."
+mkdir -p "$PLUGIN_DIR/bin"
+
+if curl -fsSL https://raw.githubusercontent.com/hyuricane/cmdpp/master/install.sh | BINDIR="$PLUGIN_DIR/bin" bash; then
+  if [[ -x "$LOCAL_BIN" ]]; then
+    exec "$LOCAL_BIN" "$@"
+  fi
+fi
+
+echo "Error: Failed to install cmdpp into $LOCAL_BIN." >&2
+echo "Press any key to exit..."
+read -n 1 -s
+exit 1

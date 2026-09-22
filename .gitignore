@@ -1,0 +1,5 @@
+# Ignore compiled cmdpp binaries inside plugin
+bin/cmdpp
+*.bak
+*.bak.*
+.DS_Store

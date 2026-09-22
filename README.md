@@ -24,8 +24,8 @@ Press **`SUPER + SHIFT + H`** to open the interactive Command++ palette anywhere
 ## Requirements
 
 - [Omarchy](https://omarchy.org/) Linux with Hyprland
-- [`cmdpp`](https://github.com/hyuricane/cmdpp) (installed automatically by `install.sh` if missing)
 - Standard Omarchy terminal (`foot`, `ghostty`, `alacritty`, or `kitty` via `xdg-terminal-exec`)
+- `curl` or `wget` and `tar` (for automated binary download on first launch)
 
 ---
 
@@ -43,14 +43,21 @@ cd omarchy-cmdpp
 ```bash
 omarchy plugin add https://github.com/hyuricane/omarchy-cmdpp.git --enable
 ```
-Then ensure the following line is in `~/.config/hypr/bindings.lua`:
+Then add the safe loader to `~/.config/hypr/bindings.lua`:
 ```lua
-dofile(os.getenv("HOME") .. "/.config/omarchy/plugins/yuri.cmdpp/cmdpp-bindings.lua")
+-- Command++
+local cmdpp_file = (os.getenv("HOME") or "") .. "/.config/omarchy/plugins/yuri.cmdpp/cmdpp-bindings.lua"
+local cmdpp_handle = io.open(cmdpp_file, "r")
+if cmdpp_handle then
+  cmdpp_handle:close()
+  dofile(cmdpp_file)
+end
 ```
 And reload Hyprland:
 ```bash
 hyprctl reload
 ```
+*(On your first press of `SUPER + SHIFT + H`, the plugin will automatically fetch the proper `cmdpp` binary for your CPU architecture directly into the plugin directory).*
 
 ---
 

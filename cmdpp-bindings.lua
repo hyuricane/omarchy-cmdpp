@@ -1,7 +1,9 @@
 -- yuri.cmdpp — Command++ Hyprland configuration
 -- Floating window rules and global shortcut
 
-local launch_cmd = "setsid uwsm-app -- xdg-terminal-exec --app-id=cmdpp --title=\"Command++\" -e cmdpp"
+local home = os.getenv("HOME") or ""
+local wrapper = home .. "/.config/omarchy/plugins/yuri.cmdpp/bin/cmdpp-wrapper"
+local launch_cmd = "setsid uwsm-app -- xdg-terminal-exec --app-id=cmdpp --title=\"Command++\" -e " .. wrapper
 
 -- Floating window rules for Command++
 o.window("cmdpp", { float = true })

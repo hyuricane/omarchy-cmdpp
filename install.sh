@@ -6,24 +6,27 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "=== Installing Command++ Plugin (yuri.cmdpp) ==="
 
-# 1. Ensure cmdpp binary is installed
-if ! command -v cmdpp >/dev/null 2>&1; then
-  echo "Installing cmdpp via official install script..."
-  curl -fsSL https://raw.githubusercontent.com/hyuricane/cmdpp/master/install.sh | bash
-  export PATH="$HOME/.local/bin:$PATH"
-fi
-
-if ! command -v cmdpp >/dev/null 2>&1; then
-  echo "Warning: cmdpp binary not found in PATH. Ensure ~/.local/bin is in your PATH." >&2
-fi
-
-# 2. Deploy plugin files into ~/.config/omarchy/plugins/yuri.cmdpp
-mkdir -p "$TARGET_DIR"
+# 1. Deploy plugin files and wrapper into ~/.config/omarchy/plugins/yuri.cmdpp
+mkdir -p "$TARGET_DIR/bin"
 cp -f "$REPO_DIR/manifest.json" "$TARGET_DIR/"
 cp -f "$REPO_DIR/Service.qml" "$TARGET_DIR/"
 cp -f "$REPO_DIR/cmdpp-bindings.lua" "$TARGET_DIR/"
+cp -f "$REPO_DIR/bin/cmdpp-wrapper" "$TARGET_DIR/bin/"
+chmod +x "$TARGET_DIR/bin/cmdpp-wrapper"
 cp -f "$REPO_DIR/README.md" "$TARGET_DIR/" 2>/dev/null || true
 cp -f "$REPO_DIR/LICENSE" "$TARGET_DIR/" 2>/dev/null || true
+
+# 2. Ensure cmdpp binary exists within the plugin directory
+if [[ ! -x "$TARGET_DIR/bin/cmdpp" ]]; then
+  if command -v cmdpp >/dev/null 2>&1; then
+    echo "Copying existing cmdpp binary into plugin directory..."
+    cp -f "$(command -v cmdpp)" "$TARGET_DIR/bin/cmdpp"
+    chmod +x "$TARGET_DIR/bin/cmdpp"
+  else
+    echo "Downloading cmdpp into plugin directory..."
+    curl -fsSL https://raw.githubusercontent.com/hyuricane/cmdpp/master/install.sh | BINDIR="$TARGET_DIR/bin" bash
+  fi
+fi
 
 # 3. Validate plugin manifest
 echo "Validating plugin..."

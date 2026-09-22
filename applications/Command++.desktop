@@ -2,7 +2,7 @@
 Version=1.0
 Name=Command++
 Comment=Fast, keyboard-driven command runner and workflow manager
-Exec=xdg-terminal-exec --app-id=cmdpp --title=Command++ -e cmdpp
+Exec=sh -c 'exec xdg-terminal-exec --app-id=cmdpp --title=Command++ -e "$HOME/.config/omarchy/plugins/yuri.cmdpp/bin/cmdpp-wrapper"'
 Terminal=false
 Type=Application
 Icon=utilities-terminal
