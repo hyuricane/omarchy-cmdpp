@@ -18,5 +18,7 @@
     "description": "Fast, keyboard-driven command runner and workflow manager",
     "category": "Utilities",
     "allowMultiple": false
-  }
+  },
+  "icon": "utilities-terminal",
+  "preview": "preview.png"
 }

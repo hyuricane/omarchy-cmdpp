@@ -4,6 +4,8 @@ A fast, keyboard-driven command palette and workflow manager plugin for [Omarchy
 
 Press **`SUPER + SHIFT + H`** to open the interactive Command++ palette anywhere on your desktop.
 
+![Command++ Preview](preview.png)
+
 ---
 
 ## Features
