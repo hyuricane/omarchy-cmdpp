@@ -8,10 +8,15 @@ CMDPP_VERSION="0.1.0"
 CMDPP_TAG="v0.1.0"
 CMDPP_REPO="hyuricane/cmdpp"
 
-# Committed SHA-256 checksums from:
-# https://github.com/hyuricane/cmdpp/releases/tag/v0.1.0/checksums.txt
-SHA256_AMD64="f4f76bea4c2ab0cc1e9296202fd06911075911d4ae8c45bba6552f389d5424a7"
-SHA256_ARM64="69a8f1ec00c63ab7dbd25c0baca094d683b04aa0a1be4ead9c0d8378f441c376"
+# Committed SHA-256 checksums of the release tarballs (.tar.gz):
+# Source: https://github.com/hyuricane/cmdpp/releases/tag/v0.1.0/checksums.txt
+ARCHIVE_SHA256_AMD64="f4f76bea4c2ab0cc1e9296202fd06911075911d4ae8c45bba6552f389d5424a7"
+ARCHIVE_SHA256_ARM64="69a8f1ec00c63ab7dbd25c0baca094d683b04aa0a1be4ead9c0d8378f441c376"
+
+# Committed SHA-256 checksums of the extracted executable (bin/cmdpp):
+# Verified against every execution to prevent stale/tampered binary bypass
+BINARY_SHA256_AMD64="1c1e611b6c3f07426bb633655498cb292132a10f30344c5d0084af2a684458ee"
+BINARY_SHA256_ARM64="6fe162b21aa79fe12a4f01a87dee1a560c40bc88aa92fd86d59053f03e1f7d39"
 
 # Security & bounded execution limits
 MAX_FILESIZE=10000000  # Strict byte ceiling (10 MB)
@@ -19,24 +24,18 @@ CONNECT_TIMEOUT=10     # Connection deadline in seconds
 MAX_TIME=60            # Total execution deadline in seconds
 # ==============================================================================
 
-PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-LOCAL_BIN="$PLUGIN_DIR/bin/cmdpp"
-
-# 1. Prefer local verified binary if present
-if [[ -x "$LOCAL_BIN" ]]; then
-  exec "$LOCAL_BIN" "$@"
-fi
-
-# 2. Resolve architecture and matching committed checksum
+# Resolve CPU architecture and matching committed checksums
 RAW_ARCH="$(uname -m)"
 case "$RAW_ARCH" in
   x86_64|amd64)
     ARCH="amd64"
-    EXPECTED_SHA="$SHA256_AMD64"
+    EXPECTED_ARCHIVE_SHA="$ARCHIVE_SHA256_AMD64"
+    EXPECTED_BINARY_SHA="$BINARY_SHA256_AMD64"
     ;;
   aarch64|arm64)
     ARCH="arm64"
-    EXPECTED_SHA="$SHA256_ARM64"
+    EXPECTED_ARCHIVE_SHA="$ARCHIVE_SHA256_ARM64"
+    EXPECTED_BINARY_SHA="$BINARY_SHA256_ARM64"
     ;;
   *)
     echo "Error: Unsupported CPU architecture: $RAW_ARCH" >&2
@@ -45,6 +44,23 @@ case "$RAW_ARCH" in
     exit 1
     ;;
 esac
+
+PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+LOCAL_BIN="$PLUGIN_DIR/bin/cmdpp"
+
+# 1. Cryptographically verify local binary before execution on every launch
+if [[ -f "$LOCAL_BIN" ]]; then
+  ACTUAL_LOCAL_SHA="$(sha256sum "$LOCAL_BIN" | awk '{print $1}')"
+  if [[ "$ACTUAL_LOCAL_SHA" == "$EXPECTED_BINARY_SHA" ]]; then
+    exec "$LOCAL_BIN" "$@"
+  else
+    echo -e "\033[1;33m[!] Existing local binary does not match committed checksum.\033[0m"
+    echo -e "    Expected: $EXPECTED_BINARY_SHA"
+    echo -e "    Actual:   $ACTUAL_LOCAL_SHA"
+    echo "Refusing to execute unverified binary. Removing and prompting for download..."
+    rm -f "$LOCAL_BIN"
+  fi
+fi
 
 FILE="cmdpp_${CMDPP_VERSION}_linux_${ARCH}.tar.gz"
 URL="https://github.com/${CMDPP_REPO}/releases/download/${CMDPP_TAG}/${FILE}"
@@ -59,13 +75,14 @@ echo -e "\033[1m              Command++ (yuri.cmdpp)                \033[0m"
 echo -e "\033[1;36m=====================================================\033[0m\n"
 
 echo -e "Command++ requires the \033[1mcmdpp\033[0m TUI executable to run."
-echo -e "No local binary was found in this plugin.\n"
+echo -e "No verified binary was found in this plugin.\n"
 echo -e "\033[1mArtifact Details:\033[0m"
-echo -e "  • Package:      cmdpp ${CMDPP_TAG}"
-echo -e "  • Architecture: ${ARCH}"
-echo -e "  • Source:       https://github.com/${CMDPP_REPO}/releases/tag/${CMDPP_TAG}"
-echo -e "  • Destination:  ${LOCAL_BIN}"
-echo -e "  • SHA-256:      ${EXPECTED_SHA}\n"
+echo -e "  • Package:       cmdpp ${CMDPP_TAG}"
+echo -e "  • Architecture:  ${ARCH}"
+echo -e "  • Source URL:    https://github.com/${CMDPP_REPO}/releases/tag/${CMDPP_TAG}"
+echo -e "  • Destination:   ${LOCAL_BIN}"
+echo -e "  • Archive SHA:   ${EXPECTED_ARCHIVE_SHA}"
+echo -e "  • Binary SHA:    ${EXPECTED_BINARY_SHA}\n"
 
 read -r -p "Do you want to download and verify this official binary? [y/N] " download_confirm
 case "$download_confirm" in
@@ -73,7 +90,7 @@ case "$download_confirm" in
     ;;
   *)
     echo -e "\n\033[33mSetup cancelled by user.\033[0m"
-    echo -e "You can manually install cmdpp anytime from: https://github.com/${CMDPP_REPO}\n"
+    echo -e "You can inspect the release anytime at: https://github.com/${CMDPP_REPO}/releases\n"
     read -n 1 -s -r -p "Press any key to exit..."
     exit 0
     ;;
@@ -97,23 +114,23 @@ if ! curl -fsSL \
 fi
 echo -e "\033[1;32m  [✓]\033[0m Archive downloaded successfully (${FILE})"
 
-ACTUAL_SHA="$(sha256sum "$TMP_DIR/$FILE" | awk '{print $1}')"
+ACTUAL_ARCHIVE_SHA="$(sha256sum "$TMP_DIR/$FILE" | awk '{print $1}')"
 
 # ==============================================================================
 # Step 3: Present Verification Checklist to User
 # ==============================================================================
 echo -e "\n\033[1m--- Verification Checklist ---\033[0m"
-echo -e "  • Size constraint:      \033[1;32mPASS\033[0m (< $((MAX_FILESIZE / 1000000)) MB)"
-echo -e "  • Expected SHA-256:     \033[1;32m${EXPECTED_SHA}\033[0m"
-echo -e "  • Actual SHA-256:       \033[1;32m${ACTUAL_SHA}\033[0m"
+echo -e "  • Size constraint:       \033[1;32mPASS\033[0m (< $((MAX_FILESIZE / 1000000)) MB)"
+echo -e "  • Expected Archive SHA:  \033[1;32m${EXPECTED_ARCHIVE_SHA}\033[0m"
+echo -e "  • Actual Archive SHA:    \033[1;32m${ACTUAL_ARCHIVE_SHA}\033[0m"
 
-if [[ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]]; then
-  echo -e "\033[1;31m\n  [✗] CHECKSUM VERIFICATION FAILED!\033[0m"
+if [[ "$ACTUAL_ARCHIVE_SHA" != "$EXPECTED_ARCHIVE_SHA" ]]; then
+  echo -e "\033[1;31m\n  [✗] ARCHIVE CHECKSUM VERIFICATION FAILED!\033[0m"
   echo "The downloaded archive does not match the committed hash. Aborting."
   read -n 1 -s -r -p "Press any key to exit..."
   exit 1
 fi
-echo -e "\033[1;32m  [✓] Cryptographic integrity: VERIFIED MATCH\033[0m"
+echo -e "\033[1;32m  [✓] Archive integrity:   VERIFIED MATCH\033[0m"
 
 # Extract binary
 tar -xzf "$TMP_DIR/$FILE" -C "$TMP_DIR"
@@ -123,10 +140,23 @@ if [[ ! -f "$TMP_DIR/cmdpp" ]]; then
   exit 1
 fi
 
+# Verify extracted binary checksum
+ACTUAL_BINARY_SHA="$(sha256sum "$TMP_DIR/cmdpp" | awk '{print $1}')"
+echo -e "  • Expected Binary SHA:   \033[1;32m${EXPECTED_BINARY_SHA}\033[0m"
+echo -e "  • Actual Binary SHA:     \033[1;32m${ACTUAL_BINARY_SHA}\033[0m"
+
+if [[ "$ACTUAL_BINARY_SHA" != "$EXPECTED_BINARY_SHA" ]]; then
+  echo -e "\033[1;31m\n  [✗] BINARY CHECKSUM VERIFICATION FAILED!\033[0m"
+  echo "The extracted executable does not match the committed hash. Aborting."
+  read -n 1 -s -r -p "Press any key to exit..."
+  exit 1
+fi
+echo -e "\033[1;32m  [✓] Binary integrity:    VERIFIED MATCH\033[0m"
+
 mkdir -p "$PLUGIN_DIR/bin"
 mv "$TMP_DIR/cmdpp" "$LOCAL_BIN"
 chmod +x "$LOCAL_BIN"
-echo -e "\033[1;32m  [✓] Safe extraction: Installed to ${LOCAL_BIN}\033[0m"
+echo -e "\033[1;32m  [✓] Safe deployment:     Installed to ${LOCAL_BIN}\033[0m"
 
 # ==============================================================================
 # Step 4: Ask User Permission Before First Execution
