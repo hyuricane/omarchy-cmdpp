@@ -31,19 +31,12 @@ Press **`SUPER + SHIFT + H`** to open the interactive Command++ palette anywhere
 
 ## Installation
 
-### Option 1: Using the Installer Script
-Clone or download this repository, then run:
-```bash
-git clone https://github.com/hyuricane/omarchy-cmdpp.git
-cd omarchy-cmdpp
-./install.sh
-```
-
-### Option 2: Using the Omarchy CLI
+Install using the official Omarchy tooling:
 ```bash
 omarchy plugin add https://github.com/hyuricane/omarchy-cmdpp.git --enable
 ```
-Then add the safe loader to `~/.config/hypr/bindings.lua`:
+
+Add the safe keybinding loader to `~/.config/hypr/bindings.lua`:
 ```lua
 -- Command++
 local cmdpp_file = (os.getenv("HOME") or "") .. "/.config/omarchy/plugins/yuri.cmdpp/cmdpp-bindings.lua"
@@ -53,11 +46,13 @@ if cmdpp_handle then
   dofile(cmdpp_file)
 end
 ```
-And reload Hyprland:
+
+Reload Hyprland:
 ```bash
 hyprctl reload
 ```
-*(On your first press of `SUPER + SHIFT + H`, the plugin will automatically fetch the proper `cmdpp` binary for your CPU architecture directly into the plugin directory).*
+
+*(On first launch via `SUPER + SHIFT + H`, the plugin automatically downloads and verifies the immutable release artifact for your architecture using committed SHA-256 checksums).*
 
 ---
 
@@ -85,17 +80,10 @@ hyprctl reload
 
 ## Uninstallation
 
-### Option 1: Using the Uninstaller Script
-Inside the repository, run:
-```bash
-./uninstall.sh
-```
-
-### Option 2: Using the Omarchy CLI
 ```bash
 omarchy plugin remove yuri.cmdpp
 ```
-*(The safe file existence guard in `~/.config/hypr/bindings.lua` ensures Hyprland continues running cleanly without config errors).*
+*(Remove the Command++ block from `~/.config/hypr/bindings.lua` and reload with `hyprctl reload`).*
 
 ---
 

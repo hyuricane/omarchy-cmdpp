@@ -4,7 +4,7 @@ set -euo pipefail
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOCAL_BIN="$PLUGIN_DIR/bin/cmdpp"
 
-# 1. Prefer the local plugin-bundled binary if present
+# 1. Prefer local verified binary if present
 if [[ -x "$LOCAL_BIN" ]]; then
   exec "$LOCAL_BIN" "$@"
 fi
@@ -14,18 +14,67 @@ if command -v cmdpp >/dev/null 2>&1; then
   exec cmdpp "$@"
 fi
 
-# 3. Bootstrap / download automatically into plugin directory on first launch
-echo "=== Command++: First-Time Setup ==="
-echo "Downloading latest cmdpp release into plugin directory..."
-mkdir -p "$PLUGIN_DIR/bin"
+# 3. Pinned, immutable release artifacts with committed SHA-256
+VERSION="0.1.0"
+TAG="v0.1.0"
+RAW_ARCH="$(uname -m)"
 
-if curl -fsSL https://raw.githubusercontent.com/hyuricane/cmdpp/master/install.sh | BINDIR="$PLUGIN_DIR/bin" bash; then
-  if [[ -x "$LOCAL_BIN" ]]; then
-    exec "$LOCAL_BIN" "$@"
-  fi
+case "$RAW_ARCH" in
+  x86_64|amd64)
+    ARCH="amd64"
+    EXPECTED_SHA="f4f76bea4c2ab0cc1e9296202fd06911075911d4ae8c45bba6552f389d5424a7"
+    ;;
+  aarch64|arm64)
+    ARCH="arm64"
+    EXPECTED_SHA="69a8f1ec00c63ab7dbd25c0baca094d683b04aa0a1be4ead9c0d8378f441c376"
+    ;;
+  *)
+    echo "Error: Unsupported CPU architecture: $RAW_ARCH" >&2
+    echo "Press any key to exit..."
+    read -n 1 -s
+    exit 1
+    ;;
+esac
+
+FILE="cmdpp_${VERSION}_linux_${ARCH}.tar.gz"
+URL="https://github.com/hyuricane/cmdpp/releases/download/${TAG}/${FILE}"
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
+
+echo "=== Command++: First-Time Setup ==="
+echo "Downloading verified cmdpp ${TAG} for ${ARCH}..."
+
+# Bounded download: strict byte ceiling (10MB), connect deadline (10s), total deadline (60s)
+if ! curl -fsSL \
+  --connect-timeout 10 \
+  --max-time 60 \
+  --max-filesize 10000000 \
+  -o "$TMP_DIR/$FILE" \
+  "$URL"; then
+  echo "Error: Failed to download $URL" >&2
+  echo "Press any key to exit..."
+  read -n 1 -s
+  exit 1
 fi
 
-echo "Error: Failed to install cmdpp into $LOCAL_BIN." >&2
-echo "Press any key to exit..."
-read -n 1 -s
-exit 1
+# Cryptographic SHA-256 integrity verification
+if ! echo "$EXPECTED_SHA  $TMP_DIR/$FILE" | sha256sum -c -; then
+  echo "Error: SHA-256 checksum verification failed!" >&2
+  echo "Press any key to exit..."
+  read -n 1 -s
+  exit 1
+fi
+
+# Safe extraction of binary
+mkdir -p "$PLUGIN_DIR/bin"
+tar -xzf "$TMP_DIR/$FILE" -C "$TMP_DIR"
+if [[ -f "$TMP_DIR/cmdpp" ]]; then
+  mv "$TMP_DIR/cmdpp" "$LOCAL_BIN"
+  chmod +x "$LOCAL_BIN"
+else
+  echo "Error: Binary not found in archive." >&2
+  read -n 1 -s
+  exit 1
+fi
+
+exec "$LOCAL_BIN" "$@"
