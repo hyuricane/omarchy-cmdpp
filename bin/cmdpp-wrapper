@@ -56,40 +56,98 @@ URL="https://github.com/${CMDPP_REPO}/releases/download/${CMDPP_TAG}/${FILE}"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-echo "=== Command++: First-Time Setup ==="
-echo "Downloading verified cmdpp ${CMDPP_TAG} for ${ARCH}..."
+# ==============================================================================
+# Step 1: Request User Permission Before Download
+# ==============================================================================
+echo -e "\n\033[1;36m=====================================================\033[0m"
+echo -e "\033[1m              Command++ (yuri.cmdpp)                \033[0m"
+echo -e "\033[1;36m=====================================================\033[0m\n"
 
-# Bounded download: strict byte ceiling, connection deadline, total deadline
+echo -e "Command++ requires the \033[1mcmdpp\033[0m TUI executable to run."
+echo -e "No local binary was found in this plugin or in system PATH.\n"
+echo -e "\033[1mArtifact Details:\033[0m"
+echo -e "  • Package:      cmdpp ${CMDPP_TAG}"
+echo -e "  • Architecture: ${ARCH}"
+echo -e "  • Source:       https://github.com/${CMDPP_REPO}/releases/tag/${CMDPP_TAG}"
+echo -e "  • Destination:  ${LOCAL_BIN}"
+echo -e "  • SHA-256:      ${EXPECTED_SHA}\n"
+
+read -r -p "Do you want to download and verify this official binary? [y/N] " download_confirm
+case "$download_confirm" in
+  [yY][eE][sS]|[yY])
+    ;;
+  *)
+    echo -e "\n\033[33mSetup cancelled by user.\033[0m"
+    echo -e "You can manually install cmdpp anytime from: https://github.com/${CMDPP_REPO}\n"
+    read -n 1 -s -r -p "Press any key to exit..."
+    exit 0
+    ;;
+esac
+
+# ==============================================================================
+# Step 2: Bounded Download & Checksum Verification
+# ==============================================================================
+echo -e "\n\033[1;34m==> Running Security & Verification Checklist...\033[0m\n"
+echo -e "  [..] Downloading release archive..."
+
 if ! curl -fsSL \
   --connect-timeout "$CONNECT_TIMEOUT" \
   --max-time "$MAX_TIME" \
   --max-filesize "$MAX_FILESIZE" \
   -o "$TMP_DIR/$FILE" \
   "$URL"; then
-  echo "Error: Failed to download $URL" >&2
-  echo "Press any key to exit..."
-  read -n 1 -s
+  echo -e "\033[1;31m  [✗] Download failed!\033[0m Could not fetch $URL" >&2
+  read -n 1 -s -r -p "Press any key to exit..."
   exit 1
 fi
+echo -e "\033[1;32m  [✓]\033[0m Archive downloaded successfully (${FILE})"
 
-# Cryptographic SHA-256 integrity verification
-if ! echo "$EXPECTED_SHA  $TMP_DIR/$FILE" | sha256sum -c -; then
-  echo "Error: SHA-256 checksum verification failed!" >&2
-  echo "Press any key to exit..."
-  read -n 1 -s
+ACTUAL_SHA="$(sha256sum "$TMP_DIR/$FILE" | awk '{print $1}')"
+
+# ==============================================================================
+# Step 3: Present Verification Checklist to User
+# ==============================================================================
+echo -e "\n\033[1m--- Verification Checklist ---\033[0m"
+echo -e "  • Size constraint:      \033[1;32mPASS\033[0m (< $((MAX_FILESIZE / 1000000)) MB)"
+echo -e "  • Expected SHA-256:     \033[1;32m${EXPECTED_SHA}\033[0m"
+echo -e "  • Actual SHA-256:       \033[1;32m${ACTUAL_SHA}\033[0m"
+
+if [[ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]]; then
+  echo -e "\033[1;31m\n  [✗] CHECKSUM VERIFICATION FAILED!\033[0m"
+  echo "The downloaded archive does not match the committed hash. Aborting."
+  read -n 1 -s -r -p "Press any key to exit..."
   exit 1
 fi
+echo -e "\033[1;32m  [✓] Cryptographic integrity: VERIFIED MATCH\033[0m"
 
-# Safe extraction of binary
-mkdir -p "$PLUGIN_DIR/bin"
+# Extract binary
 tar -xzf "$TMP_DIR/$FILE" -C "$TMP_DIR"
-if [[ -f "$TMP_DIR/cmdpp" ]]; then
-  mv "$TMP_DIR/cmdpp" "$LOCAL_BIN"
-  chmod +x "$LOCAL_BIN"
-else
-  echo "Error: Binary not found in archive." >&2
-  read -n 1 -s
+if [[ ! -f "$TMP_DIR/cmdpp" ]]; then
+  echo -e "\033[1;31m\n  [✗] Extraction error:\033[0m binary 'cmdpp' not found in archive." >&2
+  read -n 1 -s -r -p "Press any key to exit..."
   exit 1
 fi
 
-exec "$LOCAL_BIN" "$@"
+mkdir -p "$PLUGIN_DIR/bin"
+mv "$TMP_DIR/cmdpp" "$LOCAL_BIN"
+chmod +x "$LOCAL_BIN"
+echo -e "\033[1;32m  [✓] Safe extraction: Installed to ${LOCAL_BIN}\033[0m"
+
+# ==============================================================================
+# Step 4: Ask User Permission Before First Execution
+# ==============================================================================
+echo -e "\n\033[1;32m=====================================================\033[0m"
+echo -e "\033[1m       All security verification checks passed!      \033[0m"
+echo -e "\033[1;32m=====================================================\033[0m\n"
+
+read -r -p "Launch Command++ now? [Y/n] " execute_confirm
+case "$execute_confirm" in
+  [nN][oO]|[nN])
+    echo -e "\nSetup completed successfully. Press \033[1mSUPER + SHIFT + H\033[0m anytime to launch."
+    sleep 1
+    exit 0
+    ;;
+  *)
+    exec "$LOCAL_BIN" "$@"
+    ;;
+esac
