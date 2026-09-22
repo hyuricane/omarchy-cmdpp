@@ -12,5 +12,11 @@
   "keepLoaded": true,
   "entryPoints": {
     "service": "Service.qml"
+  },
+  "service": {
+    "displayName": "Command++",
+    "description": "Fast, keyboard-driven command runner and workflow manager",
+    "category": "Utilities",
+    "allowMultiple": false
   }
 }
