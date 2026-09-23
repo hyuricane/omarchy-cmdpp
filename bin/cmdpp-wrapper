@@ -4,27 +4,29 @@ set -euo pipefail
 # ==============================================================================
 # Static Release & Security Declarations (for review verification)
 # ==============================================================================
-CMDPP_VERSION="0.1.0"
-CMDPP_TAG="v0.1.0"
+CMDPP_VERSION="0.1.1"
+CMDPP_TAG="v0.1.1"
 CMDPP_REPO="hyuricane/cmdpp"
 
 # Committed SHA-256 checksums of the release tarballs (.tar.gz):
 # Source: https://github.com/hyuricane/cmdpp/releases/tag/v0.1.0/checksums.txt
-ARCHIVE_SHA256_AMD64="f4f76bea4c2ab0cc1e9296202fd06911075911d4ae8c45bba6552f389d5424a7"
-ARCHIVE_SHA256_ARM64="69a8f1ec00c63ab7dbd25c0baca094d683b04aa0a1be4ead9c0d8378f441c376"
+ARCHIVE_SHA256_AMD64="5f61b9febaf03ffdf8a97ae18ae3742e7662f6f1db9560c86b52f70bbd9ece4c"
+ARCHIVE_SHA256_ARM64="989f12b11d4d2999a2648b2d0a9b55e83afc3b113f2488336bf52200ed0c3592"
 
 # Committed SHA-256 checksums of the extracted executable (bin/cmdpp):
 # Verified against every execution to prevent stale/tampered binary bypass
-BINARY_SHA256_AMD64="1c1e611b6c3f07426bb633655498cb292132a10f30344c5d0084af2a684458ee"
-BINARY_SHA256_ARM64="6fe162b21aa79fe12a4f01a87dee1a560c40bc88aa92fd86d59053f03e1f7d39"
+BINARY_SHA256_AMD64="f63407a919d3e4cde953272d84cc80efa3e3b4df23920509f186f921566811aa"
+BINARY_SHA256_ARM64="ddb0eb6b120018e559aca3d1b25c67cfe76c2772b9142cc6a7ab14af20ac318b"
 
 # Known previous official binary SHA-256 checksums per architecture:
 # When bumping CMDPP_VERSION, add previous BINARY_SHA256_* values to their respective list below.
 # Existing installations matching these hashes are recognized as legitimate upgrades rather than tampered files.
 KNOWN_PREVIOUS_SHAS_AMD64=(
+  "1c1e611b6c3f07426bb633655498cb292132a10f30344c5d0084af2a684458ee"
   # Add previous BINARY_SHA256_AMD64 values here when bumping CMDPP_VERSION
 )
 KNOWN_PREVIOUS_SHAS_ARM64=(
+  "6fe162b21aa79fe12a4f01a87dee1a560c40bc88aa92fd86d59053f03e1f7d39"
   # Add previous BINARY_SHA256_ARM64 values here when bumping CMDPP_VERSION
 )
 
