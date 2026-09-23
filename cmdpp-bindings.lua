@@ -8,6 +8,7 @@ local launch_cmd = "setsid uwsm-app -- xdg-terminal-exec --app-id=cmdpp --title=
 -- Floating window rules for Command++
 o.window("cmdpp", { float = true })
 o.window("cmdpp", { center = true })
+o.window("cmdpp", { tag = "+terminal" })
 -- o.window("cmdpp", { size = { 960, 600 } })
 
 -- Keybinding: SUPER + SHIFT + H
