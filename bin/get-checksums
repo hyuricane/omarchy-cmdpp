@@ -1,0 +1,68 @@
+#!/bin/bash
+set -euo pipefail
+
+if [[ $# -lt 1 ]]; then
+  echo "Usage: $0 <version> [repo]" >&2
+  echo "Examples:" >&2
+  echo "  $0 0.1.1" >&2
+  echo "  $0 v0.1.1 hyuricane/cmdpp" >&2
+  exit 1
+fi
+
+VERSION="${1#v}"
+TAG="v${VERSION}"
+REPO="${2:-hyuricane/cmdpp}"
+
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
+
+echo "==> Fetching cmdpp ${TAG} from ${REPO}..." >&2
+
+for ARCH in amd64 arm64; do
+  FILE="cmdpp_${VERSION}_linux_${ARCH}.tar.gz"
+  URL="https://github.com/${REPO}/releases/download/${TAG}/${FILE}"
+
+  if ! curl -fsSL -o "$TMP_DIR/$FILE" "$URL"; then
+    echo "Error: Failed to download ${URL}" >&2
+    exit 1
+  fi
+
+  ARCHIVE_SHA="$(sha256sum "$TMP_DIR/$FILE" | awk '{print $1}')"
+  tar -xzf "$TMP_DIR/$FILE" -C "$TMP_DIR"
+
+  if [[ -f "$TMP_DIR/cmdpp" ]]; then
+    BIN_PATH="$TMP_DIR/cmdpp"
+  elif [[ -f "$TMP_DIR/bin/cmdpp" ]]; then
+    BIN_PATH="$TMP_DIR/bin/cmdpp"
+  else
+    echo "Error: 'cmdpp' executable not found in ${FILE}" >&2
+    exit 1
+  fi
+
+  BINARY_SHA="$(sha256sum "$BIN_PATH" | awk '{print $1}')"
+  rm -f "$BIN_PATH"
+
+  if [[ "$ARCH" == "amd64" ]]; then
+    ARCHIVE_SHA_AMD64="$ARCHIVE_SHA"
+    BINARY_SHA_AMD64="$BINARY_SHA"
+  else
+    ARCHIVE_SHA_ARM64="$ARCHIVE_SHA"
+    BINARY_SHA_ARM64="$BINARY_SHA"
+  fi
+done
+
+cat <<EOF
+
+# ==============================================================================
+# Paste into bin/cmdpp-wrapper:
+# ==============================================================================
+CMDPP_VERSION="${VERSION}"
+CMDPP_TAG="${TAG}"
+
+ARCHIVE_SHA256_AMD64="${ARCHIVE_SHA_AMD64}"
+ARCHIVE_SHA256_ARM64="${ARCHIVE_SHA_ARM64}"
+
+BINARY_SHA256_AMD64="${BINARY_SHA_AMD64}"
+BINARY_SHA256_ARM64="${BINARY_SHA_ARM64}"
+# ==============================================================================
+EOF
