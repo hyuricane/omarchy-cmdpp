@@ -38,21 +38,7 @@ Install using the official Omarchy tooling:
 omarchy plugin add https://github.com/hyuricane/omarchy-cmdpp.git --enable
 ```
 
-Add the safe keybinding loader to `~/.config/hypr/bindings.lua`:
-```lua
--- Command++
-local cmdpp_file = (os.getenv("HOME") or "") .. "/.config/omarchy/plugins/yuri.cmdpp/cmdpp-bindings.lua"
-local cmdpp_handle = io.open(cmdpp_file, "r")
-if cmdpp_handle then
-  cmdpp_handle:close()
-  dofile(cmdpp_file)
-end
-```
-
-Reload Hyprland:
-```bash
-hyprctl reload
-```
+The plugin automatically registers its `SUPER + SHIFT + H` shortcut and Hyprland floating window rules via its background service.
 
 *(On first launch via `SUPER + SHIFT + H`, the plugin automatically downloads and verifies the immutable release artifact for your architecture using committed SHA-256 checksums).*
 
@@ -85,7 +71,7 @@ hyprctl reload
 ```bash
 omarchy plugin remove yuri.cmdpp
 ```
-*(Remove the Command++ block from `~/.config/hypr/bindings.lua` and reload with `hyprctl reload`).*
+*(Keybindings and rules are automatically unregistered when the plugin is removed or disabled).*
 
 ---
 
