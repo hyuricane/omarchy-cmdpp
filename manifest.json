@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "yuri.cmdpp",
   "name": "Command++",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "author": "yuri",
   "license": "MIT",
   "description": "Fast, keyboard-driven command runner and workflow manager powered by cmdpp",
