@@ -40,7 +40,7 @@ omarchy plugin add https://github.com/hyuricane/omarchy-cmdpp.git --enable
 
 The plugin automatically registers its `SUPER + SHIFT + H` shortcut and Hyprland floating window rules via its background service.
 
-*(On first launch via `SUPER + SHIFT + H`, the plugin automatically downloads and verifies the immutable release artifact for your architecture using committed SHA-256 checksums).*
+*(On first launch via `SUPER + SHIFT + H`, the plugin automatically downloads and verifies the release artifact using committed SHA-256 checksums and GitHub Artifact Attestation SLSA build provenance. See [PROVENANCE.md](PROVENANCE.md) for full details).*
 
 ---
 

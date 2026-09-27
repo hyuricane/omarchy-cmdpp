@@ -4,32 +4,34 @@ set -euo pipefail
 # ==============================================================================
 # Static Release & Security Declarations (for review verification)
 # ==============================================================================
-CMDPP_VERSION="0.1.2"
-CMDPP_TAG="v0.1.2"
+CMDPP_VERSION="0.1.3"
+CMDPP_TAG="v0.1.3"
 CMDPP_REPO="hyuricane/cmdpp"
 
 # Committed SHA-256 checksums of the release tarballs (.tar.gz):
-# Source: https://github.com/hyuricane/cmdpp/releases/tag/v0.1.0/checksums.txt
-ARCHIVE_SHA256_AMD64="d38bfc4735e8d32e5f9b325ede2111ba374176db34fd18d6a3747beb2b1b19c9"
-ARCHIVE_SHA256_ARM64="00786554aeeed7f8b2d6ac2fd1c118206da67694ea8e71c6d583570b05913aab"
+# Source: https://github.com/hyuricane/cmdpp/releases/tag/v0.1.3/checksums.txt
+ARCHIVE_SHA256_AMD64="48c91811ab5427b6b134729fdce6ee6f321a51aec05b470ec45327db2107ff03"
+ARCHIVE_SHA256_ARM64="2823c59a9bd8bed8b670a3098efef9904e0a3e5a6268b287817e9c60177780a8"
 
 # Committed SHA-256 checksums of the extracted executable (bin/cmdpp):
 # Verified against every execution to prevent stale/tampered binary bypass
-BINARY_SHA256_AMD64="8ead774f4d114f4f4d4b76e8d9cf350f58a1b7a8801e5fabf51a41f70bd908ae"
-BINARY_SHA256_ARM64="d5522464fabc842516ffff57eb30dcb19571f93ed6bc229140dcc9b8b73643f5"
+BINARY_SHA256_AMD64="4f36a1b1494ae0e45af8aa5001b286e25daf57ce9c566966e8a22a362e0a7979"
+BINARY_SHA256_ARM64="f8ed6013a5af18c7bfaa33281b6b4f6b6e64bb5c4878328ab902f8825f175f59"
 
 # Known previous official binary SHA-256 checksums per architecture:
 # When bumping CMDPP_VERSION, add previous BINARY_SHA256_* values to their respective list below.
 # Existing installations matching these hashes are recognized as legitimate upgrades rather than tampered files.
 KNOWN_PREVIOUS_SHAS_AMD64=(
-  "1c1e611b6c3f07426bb633655498cb292132a10f30344c5d0084af2a684458ee"
-  "f63407a919d3e4cde953272d84cc80efa3e3b4df23920509f186f921566811aa"
   # Add previous BINARY_SHA256_AMD64 values here when bumping CMDPP_VERSION
+  "8ead774f4d114f4f4d4b76e8d9cf350f58a1b7a8801e5fabf51a41f70bd908ae" # v0.1.2
+  "1c1e611b6c3f07426bb633655498cb292132a10f30344c5d0084af2a684458ee" # v0.1.1
+  "f63407a919d3e4cde953272d84cc80efa3e3b4df23920509f186f921566811aa" # v0.1.0
 )
 KNOWN_PREVIOUS_SHAS_ARM64=(
-  "6fe162b21aa79fe12a4f01a87dee1a560c40bc88aa92fd86d59053f03e1f7d39"
-  "ddb0eb6b120018e559aca3d1b25c67cfe76c2772b9142cc6a7ab14af20ac318b"
   # Add previous BINARY_SHA256_ARM64 values here when bumping CMDPP_VERSION
+  "d5522464fabc842516ffff57eb30dcb19571f93ed6bc229140dcc9b8b73643f5" # v0.1.2
+  "6fe162b21aa79fe12a4f01a87dee1a560c40bc88aa92fd86d59053f03e1f7d39" # v0.1.1
+  "ddb0eb6b120018e559aca3d1b25c67cfe76c2772b9142cc6a7ab14af20ac318b" # v0.1.0
 )
 
 # Security & bounded execution limits
@@ -139,7 +141,8 @@ if [[ "$IS_UPGRADE" == true ]]; then
   echo -e "  • Architecture:   ${ARCH}"
   echo -e "  • Source URL:     https://github.com/${CMDPP_REPO}/releases/tag/${CMDPP_TAG}"
   echo -e "  • Destination:    ${LOCAL_BIN}"
-  echo -e "  • Target SHA:     ${EXPECTED_BINARY_SHA}\n"
+  echo -e "  • Target SHA:     ${EXPECTED_BINARY_SHA}"
+  echo -e "  • Provenance:     GitHub Artifact Attestation (SLSA v1)\n"
 
   read -r -p "Do you want to download and apply this update? [Y/n] " update_confirm || update_confirm=""
   case "$update_confirm" in
@@ -165,7 +168,8 @@ else
   echo -e "  • Source URL:    https://github.com/${CMDPP_REPO}/releases/tag/${CMDPP_TAG}"
   echo -e "  • Destination:   ${LOCAL_BIN}"
   echo -e "  • Archive SHA:   ${EXPECTED_ARCHIVE_SHA}"
-  echo -e "  • Binary SHA:    ${EXPECTED_BINARY_SHA}\n"
+  echo -e "  • Binary SHA:    ${EXPECTED_BINARY_SHA}"
+  echo -e "  • Provenance:    GitHub Artifact Attestation (SLSA v1)\n"
 
   read -r -p "Do you want to download and verify this official binary? [y/N] " download_confirm || download_confirm=""
   case "$download_confirm" in
@@ -210,6 +214,40 @@ if [[ "$ACTUAL_ARCHIVE_SHA" != "$EXPECTED_ARCHIVE_SHA" ]]; then
   handle_failure "ARCHIVE CHECKSUM VERIFICATION FAILED! The downloaded archive does not match the committed hash."
 fi
 echo -e "\033[1;32m  [✓] Archive integrity:   VERIFIED MATCH\033[0m"
+
+# Verify GitHub Artifact Attestation (SLSA Build Provenance)
+echo -e "  [..] Verifying build provenance attestation..."
+BUNDLE_FILE="$TMP_DIR/attestation_bundle.json"
+curl -fsSL --connect-timeout "$CONNECT_TIMEOUT" --max-time "$MAX_TIME" \
+  "https://api.github.com/repos/${CMDPP_REPO}/attestations/sha256:${ACTUAL_ARCHIVE_SHA}" \
+  | jq -e '.attestations[0].bundle' > "$BUNDLE_FILE" 2>/dev/null || true
+
+if command -v gh &>/dev/null; then
+  if [[ -s "$BUNDLE_FILE" ]]; then
+    VERIFY_CMD=(gh attestation verify "$TMP_DIR/$FILE" --repo "$CMDPP_REPO" --signer-repo "$CMDPP_REPO" --bundle "$BUNDLE_FILE")
+  else
+    VERIFY_CMD=(gh attestation verify "$TMP_DIR/$FILE" --repo "$CMDPP_REPO" --signer-repo "$CMDPP_REPO")
+  fi
+
+  if "${VERIFY_CMD[@]}" >/dev/null 2>&1; then
+    echo -e "\033[1;32m  [✓] Build provenance:    VERIFIED ATTESTATION (SLSA v1 via gh)\033[0m"
+  else
+    handle_failure "PROVENANCE ATTESTATION VERIFICATION FAILED! Artifact attestation could not be verified by gh."
+  fi
+else
+  # Fallback when gh CLI is not installed: verify SLSA in-toto statement payload from public GitHub Attestations API
+  if [[ -s "$BUNDLE_FILE" ]] && jq -e --arg repo "https://github.com/${CMDPP_REPO}" --arg ref "refs/tags/${CMDPP_TAG}" '
+    .dsseEnvelope.payload
+    | @base64d | fromjson
+    | select(.predicateType == "https://slsa.dev/provenance/v1")
+    | select(.predicate.buildDefinition.externalParameters.workflow.repository == $repo)
+    | select(.predicate.buildDefinition.externalParameters.workflow.ref == $ref)
+  ' "$BUNDLE_FILE" >/dev/null 2>&1; then
+    echo -e "\033[1;32m  [✓] Build provenance:    VERIFIED ATTESTATION (SLSA v1 via GitHub API)\033[0m"
+  else
+    handle_failure "PROVENANCE ATTESTATION VERIFICATION FAILED! Could not verify GitHub build provenance."
+  fi
+fi
 
 # Extract binary
 if ! tar -xzf "$TMP_DIR/$FILE" -C "$TMP_DIR"; then
