@@ -9,8 +9,8 @@ This document establishes the verified source-to-binary provenance for the upstr
 | Attribute | Value |
 |---|---|
 | **Upstream Repository** | [hyuricane/cmdpp](https://github.com/hyuricane/cmdpp) |
-| **Release Tag** | [`v0.1.3`](https://github.com/hyuricane/cmdpp/releases/tag/v0.1.3) |
-| **Exact Source Git Commit** | [`e4c274a0638b3d0d93631bc802e7ec7d135afe1e`](https://github.com/hyuricane/cmdpp/commit/e4c274a0638b3d0d93631bc802e7ec7d135afe1e) |
+| **Release Tag** | [`v0.2.0`](https://github.com/hyuricane/cmdpp/releases/tag/v0.2.0) |
+| **Exact Source Git Commit** | [`2097cd3dcd0ccbdd97cd78b5bc0e15a4c3fbfcea`](https://github.com/hyuricane/cmdpp/commit/2097cd3dcd0ccbdd97cd78b5bc0e15a4c3fbfcea) |
 | **License** | [MIT](https://github.com/hyuricane/cmdpp/blob/master/LICENSE) |
 | **Author / Maintainer** | Yuri Andri Gani ([@hyuricane](https://github.com/hyuricane)) |
 
@@ -20,15 +20,15 @@ This document establishes the verified source-to-binary provenance for the upstr
 
 All official binaries are built in an isolated GitHub-hosted runner via GitHub Actions, signed cryptographically using GitHub Artifact Attestations (Sigstore / SLSA Level 3 build provenance).
 
-- **Build Workflow**: [`.github/workflows/release.yml`](https://github.com/hyuricane/cmdpp/blob/v0.1.3/.github/workflows/release.yml)
-- **Workflow Run**: [`https://github.com/hyuricane/cmdpp/actions/runs/36313640451`](https://github.com/hyuricane/cmdpp/actions/runs/36313640451)
+- **Build Workflow**: [`.github/workflows/release.yml`](https://github.com/hyuricane/cmdpp/blob/v0.2.0/.github/workflows/release.yml)
+- **Workflow Run**: [`https://github.com/hyuricane/cmdpp/actions/runs/37904236248`](https://github.com/hyuricane/cmdpp/actions/runs/37904236248)
 - **OIDC Signer**: `https://token.actions.githubusercontent.com`
 - **Predicate Type**: `https://slsa.dev/provenance/v1`
 - **Build Command**:
   ```bash
   CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build \
     -trimpath \
-    -ldflags "-s -w -X main.Version=v0.1.3" \
+    -ldflags "-s -w -X main.Version=v0.2.0" \
     -o cmdpp \
     main.go
   ```
@@ -46,16 +46,16 @@ The release archives contain the `cmdpp` executable, `README.md`, and `LICENSE`.
 
 | Architecture | Archive Name | SHA-256 Checksum |
 |---|---|---|
-| **x86_64 / amd64** | `cmdpp_0.1.3_linux_amd64.tar.gz` | `48c91811ab5427b6b134729fdce6ee6f321a51aec05b470ec45327db2107ff03` |
-| **aarch64 / arm64** | `cmdpp_0.1.3_linux_arm64.tar.gz` | `2823c59a9bd8bed8b670a3098efef9904e0a3e5a6268b287817e9c60177780a8` |
+| **x86_64 / amd64** | `cmdpp_0.2.0_linux_amd64.tar.gz` | `85ae16533b081afa2d1a2c4662d40d8372542b789465c7e1efb7a8ac2937d07d` |
+| **aarch64 / arm64** | `cmdpp_0.2.0_linux_arm64.tar.gz` | `bbb6a79b1ec462bb174b50b505158017c033ec08592b58830498cf5e778ef21c` |
 
 ### Extracted Executable (`bin/cmdpp`)
 Verified on every launch to guarantee runtime binary integrity:
 
 | Architecture | Binary SHA-256 Checksum |
 |---|---|
-| **x86_64 / amd64** | `4f36a1b1494ae0e45af8aa5001b286e25daf57ce9c566966e8a22a362e0a7979` |
-| **aarch64 / arm64** | `f8ed6013a5af18c7bfaa33281b6b4f6b6e64bb5c4878328ab902f8825f175f59` |
+| **x86_64 / amd64** | `84b45b7002d32de1ed6c053ea2c17f102e85dd8f9f412955611cc551efc120f0` |
+| **aarch64 / arm64** | `0af66131b38bd77f477d7c0e7d201bb8e510d3bda02eba65ba93d24269c6d301` |
 
 ---
 
@@ -65,15 +65,15 @@ Verified on every launch to guarantee runtime binary integrity:
 Anyone can verify that the downloaded release archive was produced by GitHub Actions from the exact source repository and tag:
 
 ```bash
-gh attestation verify cmdpp_0.1.3_linux_amd64.tar.gz \
+gh attestation verify cmdpp_0.2.0_linux_amd64.tar.gz \
   --repo hyuricane/cmdpp \
   --signer-repo hyuricane/cmdpp
 ```
 
 Expected output:
 ```text
-Loaded digest sha256:48c91811ab5427b6b134729fdce6ee6f321a51aec05b470ec45327db2107ff03
-Loaded 2 attestations from GitHub API
+Loaded digest sha256:85ae16533b081afa2d1a2c4662d40d8372542b789465c7e1efb7a8ac2937d07d
+Loaded 1 attestation from GitHub API
 
 The following policy criteria will be enforced:
 - Predicate type must match:................ https://slsa.dev/provenance/v1
@@ -87,7 +87,7 @@ The following policy criteria will be enforced:
 The signed in-toto SLSA statement can also be fetched and inspected directly without authentication:
 
 ```bash
-curl -s "https://api.github.com/repos/hyuricane/cmdpp/attestations/sha256:48c91811ab5427b6b134729fdce6ee6f321a51aec05b470ec45327db2107ff03" \
+curl -s "https://api.github.com/repos/hyuricane/cmdpp/attestations/sha256:85ae16533b081afa2d1a2c4662d40d8372542b789465c7e1efb7a8ac2937d07d" \
   | jq '.attestations[0].bundle.dsseEnvelope.payload | @base64d | fromjson'
 ```
 
