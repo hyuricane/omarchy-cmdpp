@@ -4,25 +4,26 @@ set -euo pipefail
 # ==============================================================================
 # Static Release & Security Declarations (for review verification)
 # ==============================================================================
-CMDPP_VERSION="0.2.0"
-CMDPP_TAG="v0.2.0"
+CMDPP_VERSION="0.2.1"
+CMDPP_TAG="v0.2.1"
 CMDPP_REPO="hyuricane/cmdpp"
 
 # Committed SHA-256 checksums of the release tarballs (.tar.gz):
-# Source: https://github.com/hyuricane/cmdpp/releases/tag/v0.2.0/checksums.txt
-ARCHIVE_SHA256_AMD64="85ae16533b081afa2d1a2c4662d40d8372542b789465c7e1efb7a8ac2937d07d"
-ARCHIVE_SHA256_ARM64="bbb6a79b1ec462bb174b50b505158017c033ec08592b58830498cf5e778ef21c"
+# Source: https://github.com/hyuricane/cmdpp/releases/tag/v0.2.1/checksums.txt
+ARCHIVE_SHA256_AMD64="6cadb48fbfd843b63e64313642f2e936e7b0307c23d4f4301936e9d14b9bd306"
+ARCHIVE_SHA256_ARM64="dedcc288cd5d6bbc57e8cad48490b9a615715d53093383cdc7009d6fa6eb619b"
 
 # Committed SHA-256 checksums of the extracted executable (bin/cmdpp):
 # Verified against every execution to prevent stale/tampered binary bypass
-BINARY_SHA256_AMD64="84b45b7002d32de1ed6c053ea2c17f102e85dd8f9f412955611cc551efc120f0"
-BINARY_SHA256_ARM64="0af66131b38bd77f477d7c0e7d201bb8e510d3bda02eba65ba93d24269c6d301"
+BINARY_SHA256_AMD64="94484bd05683e4b0a4d8260e41cc997ff559b9b83684843500074e39cde1b707"
+BINARY_SHA256_ARM64="7d747917e41c408bb8d8087a189a5c65258617a1b5db08e7072ecded9868afe4"
 
 # Known previous official binary SHA-256 checksums per architecture:
 # When bumping CMDPP_VERSION, add previous BINARY_SHA256_* values to their respective list below.
 # Existing installations matching these hashes are recognized as legitimate upgrades rather than tampered files.
 KNOWN_PREVIOUS_SHAS_AMD64=(
   # Add previous BINARY_SHA256_AMD64 values here when bumping CMDPP_VERSION
+  "84b45b7002d32de1ed6c053ea2c17f102e85dd8f9f412955611cc551efc120f0" # v0.2.0
   "4f36a1b1494ae0e45af8aa5001b286e25daf57ce9c566966e8a22a362e0a7979" # v0.1.3
   "8ead774f4d114f4f4d4b76e8d9cf350f58a1b7a8801e5fabf51a41f70bd908ae" # v0.1.2
   "1c1e611b6c3f07426bb633655498cb292132a10f30344c5d0084af2a684458ee" # v0.1.1
@@ -30,6 +31,7 @@ KNOWN_PREVIOUS_SHAS_AMD64=(
 )
 KNOWN_PREVIOUS_SHAS_ARM64=(
   # Add previous BINARY_SHA256_ARM64 values here when bumping CMDPP_VERSION
+  "0af66131b38bd77f477d7c0e7d201bb8e510d3bda02eba65ba93d24269c6d301" # v0.2.0
   "f8ed6013a5af18c7bfaa33281b6b4f6b6e64bb5c4878328ab902f8825f175f59" # v0.1.3
   "d5522464fabc842516ffff57eb30dcb19571f93ed6bc229140dcc9b8b73643f5" # v0.1.2
   "6fe162b21aa79fe12a4f01a87dee1a560c40bc88aa92fd86d59053f03e1f7d39" # v0.1.1
